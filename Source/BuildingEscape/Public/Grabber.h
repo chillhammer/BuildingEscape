@@ -35,4 +35,8 @@ private:
 
 	void Grab();
 	void Release();
+	void FindPhysicsHandle();
+	void SetupInput();
+	const FHitResult GetFirstObjectInReach() const;
+	const FVector getReachPosition() const;
 };

@@ -19,19 +19,21 @@ UOpenDoor::UOpenDoor()
 void UOpenDoor::BeginPlay()
 {
 	Super::BeginPlay();
-	ActorThatOpens = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
-void UOpenDoor::OpenDoor()
-{
-	AActor* owner = GetOwner();
-	owner->SetActorRotation(FRotator(0.0f, -69.0f, 0.0f), ETeleportType::None);
-}
 
-void UOpenDoor::CloseDoor()
+// Loops Through Overlapping Actors To FInd Total Mass
+float UOpenDoor::CalculateMassOnPlate()
 {
-	AActor* owner = GetOwner();
-	owner->SetActorRotation(FRotator(0.0f, 0.0f, 0.0f), ETeleportType::None);
+	if (!PressurePlate) return 0.f;
+	float TotalMass = 0.f;
+	TArray<AActor*> actors;
+	PressurePlate->GetOverlappingActors(actors);
+	for (const auto* Iter : actors)
+	{
+		TotalMass += Iter->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+	}
+	return TotalMass;
 }
 
 
@@ -40,12 +42,12 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (PressurePlate->IsOverlappingActor(ActorThatOpens)) {
-		OpenDoor();
-		LastOpenTime = GetWorld()->GetTimeSeconds();
+	CurrentMass = CalculateMassOnPlate();
+	if (CurrentMass > TriggerMass) {
+		OnOpenRequest.Broadcast();
 	}
-	else if (GetWorld()->GetTimeSeconds() - LastOpenTime > CloseDelaySeconds) {
-		CloseDoor();
+	else {
+		OnCloseRequest.Broadcast();
 	}
 }
 
